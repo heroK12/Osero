@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>サンプル</title>
+</head>
+<body>
+<canvas id="Canvas" width="500" height="500" style="background-color: black">
+</canvas>
+<script>
+var cvs = document.getElementById('Canvas');   
+var ctx = cvs.getContext('2d');               
+var Piece_Size = 50;   // コマの大きさ
+var Piece_Margin = 3;  // 駒の間の空間の大きさ
+var Mass_Size = Piece_Size + Piece_Margin;   // マス目１つ辺りの大きさ
+var Piece_Pos;   // 盤面の駒の情報
+var Turn = 1;    // ターン処理　０　白　　１　黒
+
+// ページが読み込まれたら実行される部分
+window.onload = function() {
+  // キャンバスのサイズ変更
+  cvs.setAttribute("width", Piece_Size*8 + Piece_Margin*7);
+  cvs.setAttribute("height", cvs.width);
+    
+    
+  // 盤面の情報の初期化
+  // 0 白　1 黒　2 何もない
+  Piece_Pos = 
+  [
+    [2,2,2,2,2,2,2,2],
+    [2,2,2,2,2,2,2,2],
+    [2,2,2,2,2,2,2,2],
+    [2,2,2,0,1,2,2,2],
+    [2,2,2,1,0,2,2,2],
+    [2,2,2,2,2,2,2,2],
+    [2,2,2,2,2,2,2,2],
+    [2,2,2,2,2,2,2,2]
+  ];
+    
+  
+ 
+  Draw();  // ブロックの描画
+}
+
+function getMass(x,y){
+  return Piece_Pos[y][x];
+}
+function setMass(x,y,t){
+  Piece_Pos[y][x] = t;
+}
+
+// キー入力 イベント
+document.onkeydown = function (e){
+  if(!e) e = window.event; // おまじない
+  console.log(e.key);      // 出力テスト
+  
+  // 入力された値によって、ブロックを動かす
+  if(e.key == "ArrowLeft"){
+    
+  }else if(e.key == "ArrowRight"){
+    
+  }else if(e.key =="ArrowUp"){
+    
+  }else if(e.key =="ArrowDown"){
+    
+  }
+
+  Draw();
+}
+
+function Draw(){
+  ctx.clearRect(0, 0, 500, 500);
+  //色を指定
+  //ctx.strokeStyle="blue";  //線の色を青に指定
+
+  // 盤面を描画
+  ctx.fillStyle="green";     //塗りつぶしの色を緑に指定
+  var x = 0;
+  var y = 0;
+  for(var i=0; i<8; i++){
+    for(var j=0; j<8; j++){
+      // ctx.fillRect( X, Y, 図形の横幅, 図形の高さ);
+      ctx.fillRect(x,y,Piece_Size,Piece_Size);  // 盤面の緑のマスを表示する
+      x += Piece_Size + Piece_Margin;
+    }
+    x = 0;
+    y += Piece_Size + Piece_Margin;
+  }
+  
+  // 駒を描画
+  for(y=0; y<8; y++){
+    for(x=0; x<8; x++){
+      var color = getMass(x,y); //  Piece_Pos[x][y];  // まだ数字
+      if(color == 2){  // 駒が無いとき
+      }else if(color == 0){  // 白い駒のとき
+        Draw_Piece(x, y, "white");
+      }else if(color == 1){  // 黒い駒のとき
+        Draw_Piece(x, y, "black");
+      }
+    }
+  }
+    
+/*  // カーソルの描画
+  ctx.strokeStyle="yellow";  //線の色を指定
+  ctx.lineWidth=10;
+  ctx.beginPath();
+  ctx.arc(100, 100, 25, 0, Math.PI*2, false);
+  ctx.stroke();
+*/
+}
+
+// クリックしたときに実行される
+cvs.addEventListener('click', onClick, false);   
+function onClick(e){
+  console.log("layerX = "+e.layerX);
+  console.log("layerY = "+e.layerY);
+  var Mass = ConvertPx(e.layerX, e.layerY);
+  if(Mass == null){
+    console.log("線の上をクリックしました");
+    return;
+  }
+  console.log("クリックしたのは "+Mass[0]+" , "+Mass[1]);
+
+  // 駒が置けるかどうかを調べる
+  var RP = ReturnPiece(Mass[0], Mass[1]);
+  if(RP.length == 0) return;
+  console.log(RP);
+  // 駒を置く　（駒の情報を保存している配列を変える）
+  setMass(Mass[0], Mass[1], Turn);  //Piece_Pos[Mass[0]][Mass[1]] = Turn;
+  // 駒をひっくり返す
+  for(var i=0; i<RP.length; i++){
+    setMass(RP[i][0], RP[i][1], Turn);
+  }
+  
+  // ターンの変更
+  Turn++;
+  Turn = Turn % 2;
+  
+  //Turn++;
+  
+  // if(Turn == 2){
+  //   Turn = 0;
+  // }
+
+  Draw();
+}
+
+// 指定したマスに駒を置いたときに、ひっくり返せる駒のマスを返す
+// つまり、１つでも、返せる駒があれば、置けるマスである
+function ReturnPiece(x, y){
+  var RP = new Array(0);   // ひっくり返せる駒の配列
+  
+  // そのマスに駒があれば、nullを返す
+  if(getMass(x,y)/*Piece_Pos[x][y]*/ != 2) return RP;
+
+  // 置けるかどうかを左上から、時計回りに、調べていく
+  var cx = -1;      // 調べる方向
+  var cy = -1;      // 調べる方向
+  for(var cnt=0; cnt<8; cnt++){
+    // cx cy を、変更する
+    if(cnt==1){       cx++;
+    }else if(cnt==2){ cx++;
+    }else if(cnt==3){ cy++;
+    }else if(cnt==4){ cy++;
+    }else if(cnt==5){ cx--;
+    }else if(cnt==6){ cx--;
+    }else if(cnt==7){ cy--;
+    }
+    
+    var ex = x + cx;   // 今、調べているマス（調べる方向に進んだ先のマス） X
+    var ey = y + cy;   // 今、調べているマス（調べる方向に進んだ先のマス） Y
+    if(ex == -1 || ex == 8 || ey == -1 || ey == 8) continue;    // 調べるマスの、先のマスが、盤面の範囲外
+
+    var check_piece = getMass(ex,ey);  //Piece_Pos[ex][ey];   // (ex, ey)のマスにある、駒の種類
+    var rp = new Array(0);  // 今調べている方向の、マスを保管しておく
+    if(check_piece != (Turn+1) % 2) continue;       // 調べる先のマスが、相手の駒でなければ、コンティニュー
+    // 調べるマスの先に駒がある　or　そのマスが、最後　までループ
+    while(true){
+      if(ex+cx == -1 || ex+cx == 8 || ey+cy == -1 || ey+cy == 8) break;    // 調べるマスの、先のマスが、盤面の範囲外
+      rp.push([ex,ey]);
+      ex += cx; ey += cy;
+      check_piece = getMass(ex,ey);  // Piece_Pos[ex][ey];
+      if(check_piece != (Turn+1)%2) break;                 // 調べるマスが、相手の駒でない
+    }
+    if(check_piece != Turn) continue;     // 今調べているマスが、自分の駒でない
+    Array.prototype.push.apply(RP, rp);   // 調べた方向の、ひっくり返せる駒を、RPに、追加
+  }
+  return RP;  
+}
+
+
+function ConvertPx(x, y){
+  var Mass = new Array(2);   // クリックしたマス目の配列 [ Xマス目,　Yマス目 ]
+    
+  Mass[0] = Math.floor(x / Mass_Size);  // xを55で割った余り // マスの中の座標
+  var Mx = x % Mass_Size;
+  //console.log("クリックした座標を５５で割った余りは "+Mx);
+  var Cx = Math.floor(x / Mass_Size);  // なんマス目かがこれで分かる
+  if(Mx >= Piece_Size){      // 線の上をクリックした
+    return null;   
+  }
+    
+  Mass[1] = Math.floor(y / Mass_Size);  // yを55で割った余り // マスの中の座標
+  var My = y % Mass_Size;
+  //console.log("クリックした座標を５５で割った余りは "+My);
+  var Cy = Math.floor(y / Mass_Size);  // なんマス目かがこれで分かる
+  if(My >= Piece_Size){      // 線の上をクリックした
+    return null;    
+  }
+    
+  return Mass;
+  
+}
+
+// 駒を描画するための関数
+// Xマス目、Yマス目、駒の種類（白か黒か）
+function Draw_Piece(x, y, color){
+  ctx.fillStyle = color;     //塗りつぶしの色を緑に指定
+  // ctx.arc(X ,  Y, 半径, 0, Math.PI*2, false);
+  ctx.beginPath();  // これがないと、表示がなぜか。おかしくなる。
+  ctx.arc( x*Mass_Size + (Piece_Size/2), // X座標
+           y*Mass_Size + (Piece_Size/2), // Y座標
+           Piece_Size/2, 0, Math.PI*2, false);
+  ctx.fill();
+}
+
+</script>
+</body>
+</html>
+
+
+
